@@ -2,7 +2,7 @@ import gsap from 'gsap'
 import { useEffect, useRef, useState } from 'react'
 import { FaBagShopping, FaMinus, FaPlus, FaTrash, FaWhatsapp, FaXmark } from 'react-icons/fa6'
 
-import { formatINR, cartBoxSummary, boxSizeOf } from '../data/business'
+import { formatINR, cartBoxSummary, boxSizeOf, MAX_CARTONS } from '../data/business'
 import { getProduct } from '../data/products'
 import { useCart } from '../context/CartContext'
 import { useSiteData } from '../context/SiteDataContext'
@@ -148,16 +148,19 @@ export default function CartDrawer() {
               <ul ref={listRef} className="no-scrollbar flex-1 space-y-3 overflow-y-auto px-6 py-5">
                 {items.map((item) => {
                   const product = getProduct(item.id)
+                  const itemBoxSize = boxSizeOf(product)
+                  const itemBoxes = item.quantity / itemBoxSize
+                  const atMax = item.quantity >= itemBoxSize * MAX_CARTONS
                   return (
                     <li
                       key={item.id}
                       className="flex items-center gap-3 rounded-2xl border border-brand-100 bg-brand-50/40 p-3"
                     >
-                      <div className="h-16 w-14 shrink-0 overflow-hidden rounded-xl bg-white shadow-sm">
+                      <div className="h-24 w-16 shrink-0 overflow-hidden rounded-xl bg-white p-1.5 shadow-sm">
                         <BottleImage
                           srcs={product?.images ?? []}
                           alt={item.label}
-                          className="h-full w-full object-cover"
+                          className="h-full w-full object-contain"
                         />
                       </div>
                       <div className="min-w-0 flex-1">
@@ -170,7 +173,7 @@ export default function CartDrawer() {
                           </span>
                         </p>
                         <p className="mt-0.5 text-xs text-ink-900/55">
-                          {formatINR(item.price)} each
+                          {formatINR(item.price)} / bottle
                         </p>
                         <div className="mt-2 flex items-center justify-between">
                           <div className="flex items-center gap-1 rounded-xl border border-brand-100 bg-white p-0.5 shadow-sm">
@@ -183,25 +186,33 @@ export default function CartDrawer() {
                               <FaMinus className="text-[10px]" />
                             </button>
                             <span className="min-w-8 text-center text-sm font-extrabold text-ink-950 tabular-nums">
-                              {item.quantity}
+                              {itemBoxes}
                             </span>
                             <button
                               type="button"
                               aria-label={`Increase ${item.label}`}
                               onClick={() => increment(item.id)}
-                              className="grid h-7 w-7 cursor-pointer place-items-center rounded-lg bg-brand-500 text-white transition hover:bg-brand-600 active:scale-90"
+                              disabled={atMax}
+                              className="grid h-7 w-7 place-items-center rounded-lg bg-brand-500 text-white transition hover:bg-brand-600 active:scale-90 disabled:cursor-not-allowed disabled:opacity-40"
                             >
                               <FaPlus className="text-[10px]" />
                             </button>
                           </div>
-                          <button
-                            type="button"
-                            aria-label={`Remove ${item.label} from cart`}
-                            onClick={() => removeItem(item.id)}
-                            className="grid h-8 w-8 cursor-pointer place-items-center rounded-lg text-ink-900/40 transition hover:bg-red-50 hover:text-red-500 active:scale-90"
-                          >
-                            <FaTrash className="text-xs" />
-                          </button>
+                          <div className="flex flex-col items-end gap-1">
+                            <span className="text-[10px] font-semibold text-ink-900/55">
+                              {atMax
+                                ? `Max ${MAX_CARTONS} ${itemBoxSize === 12 ? 'cartons' : 'boxes'} reached`
+                                : `1 ${itemBoxSize > 12 ? 'box' : 'carton'} = ${itemBoxSize} bottles`}
+                            </span>
+                            <button
+                              type="button"
+                              aria-label={`Remove ${item.label} from cart`}
+                              onClick={() => removeItem(item.id)}
+                              className="grid h-7 w-7 cursor-pointer place-items-center rounded-lg text-ink-900/40 transition hover:bg-red-50 hover:text-red-500 active:scale-90"
+                            >
+                              <FaTrash className="text-xs" />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </li>

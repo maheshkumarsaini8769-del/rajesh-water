@@ -13,6 +13,9 @@ export const CARTON_SIZE = 12
 
 export const DEFAULT_BOX_SIZE = CARTON_SIZE
 
+/** Maximum cartons a customer may order of a single product. */
+export const MAX_CARTONS = 40
+
 /** Box size for a product (e.g. 200 ML ships 78 bottles per box). */
 export const boxSizeOf = (product) => product?.boxSize || DEFAULT_BOX_SIZE
 

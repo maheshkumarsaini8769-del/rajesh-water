@@ -9,7 +9,7 @@ import {
   useState,
 } from 'react'
 import { getProduct } from '../data/products'
-import { boxSizeOf } from '../data/business'
+import { boxSizeOf, MAX_CARTONS } from '../data/business'
 import { useSiteData } from './SiteDataContext'
 
 const CartContext = createContext(null)
@@ -45,15 +45,18 @@ export function CartProvider({ children }) {
     }
   }, [items])
 
+  const maxQuantityOf = (productId) => boxSizeOf(getProduct(productId)) * MAX_CARTONS
+
   const addItem = useCallback((productId, quantity = 1, overrides = {}) => {
     setItems((prev) => {
+      const cap = maxQuantityOf(productId)
       const existing = prev.find((it) => it.id === productId)
       if (existing) {
         return prev.map((it) =>
           it.id === productId
             ? {
                 ...it,
-                quantity: it.quantity + quantity,
+                quantity: Math.min(it.quantity + quantity, cap),
                 ...(overrides.price != null ? { price: overrides.price } : {}),
                 ...(overrides.label ? { label: overrides.label } : {}),
               }
@@ -66,7 +69,7 @@ export function CartProvider({ children }) {
         ...prev,
         {
           id: productId,
-          quantity,
+          quantity: Math.min(quantity, cap),
           price: overrides.price ?? product.price,
           label: overrides.label ?? product.label,
         },
@@ -76,18 +79,26 @@ export function CartProvider({ children }) {
   }, [])
 
   const setQuantity = useCallback((productId, quantity) => {
+    const cap = maxQuantityOf(productId)
     setItems((prev) =>
       prev
-        .map((it) => (it.id === productId ? { ...it, quantity: Math.max(0, quantity) } : it))
+        .map((it) =>
+          it.id === productId
+            ? { ...it, quantity: Math.min(Math.max(0, quantity), cap) }
+            : it,
+        )
         .filter((it) => it.quantity > 0),
     )
   }, [])
 
   const increment = useCallback((productId, amount) => {
     const step = amount ?? boxSizeOf(getProduct(productId))
+    const cap = maxQuantityOf(productId)
     setItems((prev) =>
       prev.map((it) =>
-        it.id === productId ? { ...it, quantity: it.quantity + step } : it,
+        it.id === productId
+          ? { ...it, quantity: Math.min(it.quantity + step, cap) }
+          : it,
       ),
     )
   }, [])

@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { FaBagShopping, FaMinus, FaPlus } from 'react-icons/fa6'
 
-import { formatINR, boxSizeOf } from '../data/business'
+import { formatINR, boxSizeOf, MAX_CARTONS } from '../data/business'
 import { useCart } from '../context/CartContext'
 import { getBottleImages } from '../utils/imageConfig'
 import BottleImage from './BottleImage'
@@ -11,7 +11,7 @@ const DARK = '#00658d'
 const SUCCESS = '#2eba62'
 
 export default function ProductCard({ product, index = 0, reveal = true }) {
-  const { addItem, flyToCart, openCart } = useCart()
+  const { items, addItem, flyToCart, openCart } = useCart()
   const boxSize = boxSizeOf(product)
   const minQty = Math.max(boxSize, 48)
   const [quantity, setQuantity] = useState(minQty)
@@ -21,6 +21,9 @@ export default function ProductCard({ product, index = 0, reveal = true }) {
   const addTimer = useRef(null)
 
   const packWord = boxSize > 12 ? 'box' : 'carton'
+  const inCart = items.find((it) => it.id === product.id)?.quantity ?? 0
+  const inCartBoxes = inCart / boxSize
+  const atMax = inCartBoxes >= MAX_CARTONS
 
   const srcs = product.image
     ? [product.image, ...getBottleImages('bottle200', index)]
@@ -28,6 +31,7 @@ export default function ProductCard({ product, index = 0, reveal = true }) {
 
   const handleAdd = (e) => {
     e?.preventDefault?.()
+    if (atMax) return
     const img = imageRef.current?.querySelector('img')
     const rect = img?.getBoundingClientRect()
 
@@ -100,7 +104,7 @@ export default function ProductCard({ product, index = 0, reveal = true }) {
           <FaMinus className="text-[10px]" />
         </button>
         <span className="min-w-10 text-center text-sm font-extrabold text-[#1a1c1c] tabular-nums">
-          {quantity}
+          {quantity / boxSize}
         </span>
         <button
           type="button"
@@ -112,12 +116,17 @@ export default function ProductCard({ product, index = 0, reveal = true }) {
           <FaPlus className="text-[10px]" />
         </button>
       </div>
+      <p className="mb-3 -mt-1 text-[10px] font-semibold text-[#6e7881]">
+        1 {packWord} = {boxSize} bottles
+      </p>
 
       <div className="mt-auto w-full space-y-1.5">
         <button
           type="button"
           onClick={handleAdd}
-          className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded px-2 py-2 text-[10px] font-bold tracking-wider text-white uppercase shadow-md transition-all duration-300 active:scale-[0.98] sm:py-2.5 sm:text-xs"
+          disabled={atMax}
+          data-in-cart-boxes={inCartBoxes}
+          className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded px-2 py-2 text-[10px] font-bold tracking-wider text-white uppercase shadow-md transition-all duration-300 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 sm:py-2.5 sm:text-xs"
           style={{ backgroundColor: PRIMARY }}
           onMouseEnter={(e) => {
             e.currentTarget.style.backgroundColor = DARK
@@ -129,6 +138,13 @@ export default function ProductCard({ product, index = 0, reveal = true }) {
           {added ? (
             <>
               Added <span className="animate-check-pop">✓</span>
+            </>
+          ) : atMax ? (
+            <>Max {MAX_CARTONS} {packWord}s reached</>
+          ) : inCartBoxes > 0 ? (
+            <>
+              <FaBagShopping className="h-3.5 w-3.5" />
+              {inCartBoxes} in cart
             </>
           ) : (
             <>

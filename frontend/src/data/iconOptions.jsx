@@ -3,7 +3,6 @@ import {
   FaBottleDroplet,
   FaBottleWater,
   FaCartShopping,
-  FaCircleCheck,
   FaClock,
   FaDroplet,
   FaGlassWater,

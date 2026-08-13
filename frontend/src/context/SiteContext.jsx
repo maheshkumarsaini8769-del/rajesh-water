@@ -6,7 +6,6 @@ import {
   useState,
 } from 'react'
 import {
-  DEFAULT_CONTENT,
   loadContent,
   resetContent,
   saveContent,

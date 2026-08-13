@@ -1,6 +1,6 @@
 import gsap from 'gsap'
 import { useEffect, useRef, useState } from 'react'
-import { FaArrowLeft, FaCircleCheck, FaWhatsapp } from 'react-icons/fa6'
+import { FaArrowLeft, FaWhatsapp } from 'react-icons/fa6'
 
 import { formatINR, cartBoxSummary, boxSizeOf } from '../data/business'
 import { getProduct } from '../data/products'
@@ -8,7 +8,7 @@ import { useCart } from '../context/CartContext'
 import { useSite } from '../context/SiteContext'
 import { useSiteData } from '../context/SiteDataContext'
 import { buildOrderMessage, openWhatsApp } from '../utils/whatsapp'
-import { androidNote, beginTruecaller, isAndroid, pollTruecaller } from '../utils/truecaller'
+import { beginTruecaller, isAndroid, pollTruecaller } from '../utils/truecaller'
 
 const initial = { name: '', mobile: '', address: '' }
 

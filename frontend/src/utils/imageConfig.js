@@ -18,11 +18,8 @@
 
 const env = import.meta.env ?? {}
 
-const WIKIMEDIA = (path) =>
-  `https://upload.wikimedia.org/wikipedia/commons/thumb/${path}`
-
 const IMAGES = {
-  // Primary: clean bottle photos (Wikimedia Commons thumb CDN, verified working)
+  // Primary: product photos served from /public/uploads
   bottle200: ['/uploads/200ml.png'],
   bottle500: ['/uploads/500ml.png'],
   bottle1l: ['/uploads/1litre.png'],

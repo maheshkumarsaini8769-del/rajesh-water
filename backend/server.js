@@ -191,6 +191,22 @@ function requireAuth(req, res, next) {
   return next()
 }
 
+/* ------------------------------- Truecaller ------------------------------- */
+
+const TC_PARTNER_KEY = process.env.TRUECALLER_APP_KEY || ''
+const TC_PARTNER_NAME = process.env.TRUECALLER_PARTNER_NAME || 'Rajesh Water'
+const TC_ADMIN_PHONE = String(process.env.TRUECALLER_ADMIN_PHONE || '').replace(/\D/g, '')
+const TC_CTA_COLOR = process.env.TRUECALLER_CTA_COLOR || '1f8f58'
+const tcRequests = new Map()
+const TC_TTL = 10 * 60 * 1000
+
+function tcCleanup() {
+  const now = Date.now()
+  for (const [id, entry] of tcRequests) {
+    if (now - entry.createdAt > TC_TTL) entry.status = 'expired'
+  }
+}
+
 function dayKey(date) {
   const d = new Date(date)
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -220,6 +236,75 @@ app.post('/api/auth/login', (req, res) => {
 
 app.get('/api/auth/me', requireAuth, (req, res) => {
   res.json({ admin: { username: req.admin.username } })
+})
+
+app.get('/api/auth/truecaller/config', (_req, res) => {
+  res.json({
+    enabled: Boolean(TC_PARTNER_KEY),
+    partnerKey: TC_PARTNER_KEY,
+    partnerName: TC_PARTNER_NAME,
+    ctaColor: TC_CTA_COLOR,
+  })
+})
+
+app.get('/api/auth/truecaller/start', (_req, res) => {
+  tcCleanup()
+  if (!TC_PARTNER_KEY) return res.status(400).json({ error: 'Truecaller not configured' })
+  const requestId = crypto.randomBytes(16).toString('hex')
+  tcRequests.set(requestId, { createdAt: Date.now(), status: 'pending' })
+  res.json({ requestId })
+})
+
+app.post('/api/auth/truecaller/callback', async (req, res) => {
+  const body = req.body ?? {}
+  const requestId = String(body.requestId || '')
+  const entry = tcRequests.get(requestId)
+  if (!entry) return res.status(400).json({ error: 'Unknown requestId' })
+  res.setTimeout(2800)
+  if (body.status === 'user_rejected') {
+    entry.status = 'user_rejected'
+    return res.json({ ok: true })
+  }
+  const accessToken = String(body.accessToken || '')
+  const endpoint = String(body.endpoint || '')
+  if (!accessToken || !endpoint) return res.status(400).json({ error: 'Missing accessToken or endpoint' })
+  try {
+    const r = await fetch(endpoint, { headers: { Authorization: `Bearer ${accessToken}` }, signal: AbortSignal.timeout(2500) })
+    const profile = r.ok ? await r.json() : null
+    const phone = String((profile?.phoneNumbers?.[0] || '').replace(/\D/g, ''))
+    const first = profile?.name?.first || ''
+    const last = profile?.name?.last || ''
+    entry.phone = phone
+    entry.name = [first, last].filter(Boolean).join(' ').trim()
+    entry.status = 'verified'
+  } catch (e) {
+    entry.status = 'failed'
+    console.error('Truecaller profile fetch failed:', e.message)
+  }
+  res.json({ ok: true })
+})
+
+app.get('/api/auth/truecaller/status', (req, res) => {
+  const entry = tcRequests.get(String(req.query.requestId || ''))
+  if (!entry) return res.json({ status: 'unknown' })
+  res.json({
+    status: entry.status,
+    phone: entry.phone || '',
+    name: entry.name || '',
+    isAdmin: entry.status === 'verified' && Boolean(TC_ADMIN_PHONE) && entry.phone === TC_ADMIN_PHONE,
+  })
+})
+
+app.post('/api/auth/truecaller/verify', (req, res) => {
+  const entry = tcRequests.get(String(req.body?.requestId || ''))
+  if (!entry || entry.status !== 'verified') {
+    return res.status(400).json({ error: 'Verification not completed' })
+  }
+  if (TC_ADMIN_PHONE && entry.phone === TC_ADMIN_PHONE) {
+    res.json({ token: issueToken(), admin: { username: ADMIN_USERNAME }, phone: entry.phone, name: entry.name, isAdmin: true })
+  } else {
+    res.json({ phone: entry.phone, name: entry.name, isAdmin: false })
+  }
 })
 
 app.get('/api/site', (_req, res) => {

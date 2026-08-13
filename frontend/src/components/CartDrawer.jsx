@@ -1,9 +1,9 @@
 import gsap from 'gsap'
 import { useEffect, useRef, useState } from 'react'
-import { FaBagShopping, FaMinus, FaPlus, FaTrash, FaXmark } from 'react-icons/fa6'
+import { FaBagShopping, FaMinus, FaPlus, FaTrash, FaWhatsapp, FaXmark } from 'react-icons/fa6'
 
 import { formatINR, cartBoxSummary, boxSizeOf } from '../data/business'
-import { products } from '../data/products'
+import { getProduct } from '../data/products'
 import { useCart } from '../context/CartContext'
 import { useSiteData } from '../context/SiteDataContext'
 import BottleImage from './BottleImage'
@@ -85,7 +85,7 @@ export default function CartDrawer() {
   if (!isOpen) return null
 
   const progress = Math.min((totalQuantity / minOrder) * 100, 100)
-  const sizeOf = (id) => boxSizeOf(products.find((p) => p.id === id))
+  const sizeOf = (id) => boxSizeOf(getProduct(id))
   const boxSummary = cartBoxSummary(items, sizeOf)
 
   return (
@@ -147,7 +147,7 @@ export default function CartDrawer() {
             ) : (
               <ul ref={listRef} className="no-scrollbar flex-1 space-y-3 overflow-y-auto px-6 py-5">
                 {items.map((item) => {
-                  const product = products.find((p) => p.id === item.id)
+                  const product = getProduct(item.id)
                   return (
                     <li
                       key={item.id}
@@ -274,13 +274,14 @@ export default function CartDrawer() {
                 type="button"
                 disabled={!meetsMinimum || items.length === 0}
                 onClick={() => setStep('checkout')}
-                className={`w-full cursor-pointer rounded-2xl px-6 py-4 text-sm font-extrabold text-white transition-all duration-300 ${
+                className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl px-6 py-4 text-sm font-extrabold text-white transition-all duration-300 ${
                   meetsMinimum && items.length > 0
-                    ? 'bg-gradient-to-r from-brand-500 to-brand-600 shadow-[0_14px_32px_rgba(31,143,88,0.4)] hover:-translate-y-0.5 active:scale-[0.98]'
+                    ? 'bg-[#25D366] shadow-[0_14px_32px_rgba(37,211,102,0.4)] hover:-translate-y-0.5 hover:shadow-[0_18px_38px_rgba(37,211,102,0.5)] active:scale-[0.98]'
                     : 'cursor-not-allowed bg-ink-900/15 shadow-none'
                 }`}
               >
-                {meetsMinimum ? 'Checkout & Order' : `Add ${minOrder - totalQuantity} more bottles`}
+                <FaWhatsapp className="text-xl" />
+                {meetsMinimum ? 'Order on WhatsApp' : `Add ${minOrder - totalQuantity} more bottles`}
               </button>
             </div>
           </>

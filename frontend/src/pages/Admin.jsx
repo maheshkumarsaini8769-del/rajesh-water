@@ -13,6 +13,7 @@ import {
 } from 'react-icons/fa6'
 
 import { api, getToken, setToken } from '../utils/api'
+import { androidNote, beginTruecaller, isAndroid, pollTruecaller } from '../utils/truecaller'
 import AdminBackground from './admin/Background'
 import Customers from './admin/Customers'
 import Dashboard from './admin/Dashboard'
@@ -51,6 +52,53 @@ function LoginGate({ onUnlock }) {
       })
       .catch((err) => setError(err.message))
       .finally(() => setBusy(false))
+  }
+
+  const tcLogin = async () => {
+    if (busy) return
+    setBusy(true)
+    setError('')
+    try {
+      const { available, requestId, config } = await beginTruecaller('/api')
+      if (!available) {
+        setError(
+          config && config.enabled === false
+            ? 'Truecaller login is not configured yet. Use the password for now.'
+            : 'Open this page on an Android phone with the Truecaller app installed.'
+        )
+        setBusy(false)
+        return
+      }
+      pollTruecaller({
+        base: '/api',
+        requestId,
+        onResult: async (result) => {
+          setBusy(false)
+          if (result.status === 'verified') {
+            if (result.isAdmin) {
+              try {
+                const v = await api.post('/auth/truecaller/verify', { requestId })
+                setToken(v.token)
+                onUnlock(v.admin)
+              } catch (err) {
+                setError(err.message)
+              }
+            } else {
+              setError(`Number +91 ${result.phone} is not an authorized admin number.`)
+            }
+          } else if (result.status === 'user_rejected') {
+            setError('Verification cancelled in Truecaller.')
+          } else if (result.status === 'timeout') {
+            setError('Verification timed out. Please try again.')
+          } else {
+            setError('Verification could not be completed. Try again.')
+          }
+        },
+      })
+    } catch (err) {
+      setBusy(false)
+      setError(err.message)
+    }
   }
 
   return (
@@ -95,6 +143,29 @@ function LoginGate({ onUnlock }) {
         >
           {busy ? 'Signing in…' : 'Sign in'}
         </button>
+
+        {isAndroid() && (
+          <div className="mt-3">
+            <button
+              type="button"
+              onClick={tcLogin}
+              disabled={busy}
+              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-brand-500 bg-white py-3 text-sm font-bold text-brand-600 transition-all duration-200 hover:bg-brand-50 disabled:opacity-60"
+            >
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 6h.01M12 10v4M12 14v.01" />
+                <rect x="9.5" y="6" width="5" height="9" rx="1" />
+                <path d="M9 5.5h6" />
+              </svg>
+              {busy ? 'Waiting for Truecaller…' : 'Login with Truecaller'}
+            </button>
+            <p className="mt-1.5 text-center text-[11px] font-semibold text-ink-900/45">
+              {androidNote()} Your number must be {`+91`} 7742735762.
+            </p>
+          </div>
+        )}
+
         <a
           href="#/"
           className="mt-4 block text-center text-xs font-bold text-ink-900/45 transition-colors hover:text-brand-600"

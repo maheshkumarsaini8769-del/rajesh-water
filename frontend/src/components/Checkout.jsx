@@ -8,13 +8,12 @@ import { useCart } from '../context/CartContext'
 import { useSite } from '../context/SiteContext'
 import { useSiteData } from '../context/SiteDataContext'
 import { buildOrderMessage, openWhatsApp } from '../utils/whatsapp'
+import { androidNote, beginTruecaller, isAndroid, pollTruecaller } from '../utils/truecaller'
 
-const MOBILE_RE = /^[6-9]\d{9}$/
-
-const initial = { name: '', mobile: '', address: '', city: '', message: '' }
+const initial = { name: '', mobile: '', address: '' }
 
 export default function Checkout({ onBack, onClose }) {
-  const { items, totalQuantity, totalAmount, meetsMinimum } = useCart()
+  const { items, totalQuantity, totalAmount, meetsMinimum, clearCart } = useCart()
   const { content } = useSite()
   const { settings } = useSiteData()
   const whatsappNumber = settings.whatsappNumber || content.contact?.whatsappNumber
@@ -22,9 +21,9 @@ export default function Checkout({ onBack, onClose }) {
   const boxSummary = cartBoxSummary(items, (id) => boxSizeOf(getProduct(id)))
   const [form, setForm] = useState(initial)
   const [errors, setErrors] = useState({})
-  const [summaryOpen, setSummaryOpen] = useState(false)
-  const [status, setStatus] = useState('idle') // idle | sending | sent
+  const [status, setStatus] = useState('idle') // idle | sent
   const [saveError, setSaveError] = useState(false)
+  const [tcBusy, setTcBusy] = useState(false)
   const successRef = useRef(null)
 
   useEffect(() => {
@@ -49,30 +48,52 @@ export default function Checkout({ onBack, onClose }) {
   const validate = () => {
     const next = {}
     if (!form.name.trim()) next.name = 'Name is required'
-    if (!form.mobile.trim()) next.mobile = 'Mobile number is required'
-    else if (!MOBILE_RE.test(form.mobile.replace(/\s+/g, '')))
-      next.mobile = 'Enter a valid 10-digit Indian mobile number'
+    if (!/^\d{10,12}$/.test(form.mobile.replace(/\D/g, ''))) next.mobile = 'Valid mobile number is required'
     if (!form.address.trim()) next.address = 'Delivery address is required'
-    if (totalQuantity < minOrder) next.cart = `Minimum order is ${minOrder} bottles`
     setErrors(next)
     return Object.keys(next).length === 0
+  }
+
+  const tcAutofill = async () => {
+    if (tcBusy) return
+    setTcBusy(true)
+    try {
+      const { available, requestId } = await beginTruecaller('/api')
+      if (!available) {
+        setTcBusy(false)
+        return
+      }
+      pollTruecaller({
+        base: '/api',
+        requestId,
+        onResult: (result) => {
+          setTcBusy(false)
+          if (result.status === 'verified' && result.phone) {
+            setForm((f) => ({
+              ...f,
+              name: result.name && !f.name.trim() ? result.name : f.name,
+              mobile: result.phone,
+            }))
+            setErrors((er) => ({ ...er, name: undefined, mobile: undefined }))
+          }
+        },
+      })
+    } catch {
+      setTcBusy(false)
+    }
   }
 
   const handleSubmit = (e) => {
     e.preventDefault()
     if (!validate()) return
-    setSummaryOpen(true)
-  }
 
-  const handleWhatsAppOrder = () => {
-    if (status !== 'idle') return
     const message = buildOrderMessage(
       {
         name: form.name.trim(),
-        mobile: form.mobile.replace(/\s+/g, ''),
+        mobile: form.mobile.replace(/\D/g, ''),
         address: form.address.trim(),
-        city: form.city.trim(),
-        message: form.message.trim(),
+        city: '',
+        message: '',
       },
       {
         products: items.map((it) => ({
@@ -91,10 +112,10 @@ export default function Checkout({ onBack, onClose }) {
     const payload = {
       customer: {
         name: form.name.trim(),
-        mobile: form.mobile.replace(/\s+/g, ''),
+        mobile: form.mobile.replace(/\D/g, ''),
         address: form.address.trim(),
-        city: form.city.trim(),
-        message: form.message.trim(),
+        city: '',
+        message: '',
       },
       products: items.map((it) => ({
         id: it.id,
@@ -118,7 +139,7 @@ export default function Checkout({ onBack, onClose }) {
         .catch(() => setSaveError(true))
     }
 
-    setTimeout(() => openWhatsApp(message, whatsappNumber), 1700)
+    openWhatsApp(message, whatsappNumber)
   }
 
   const inputClass = (key) =>
@@ -162,65 +183,14 @@ export default function Checkout({ onBack, onClose }) {
         )}
         <button
           type="button"
-          onClick={onClose}
-          className="mt-2 rounded-2xl border border-brand-200 bg-white px-6 py-3 text-sm font-bold text-brand-700 transition hover:bg-brand-50"
+          onClick={() => {
+            clearCart()
+            onClose()
+          }}
+          className="mt-2 cursor-pointer rounded-2xl border border-brand-200 bg-white px-6 py-3 text-sm font-bold text-brand-700 transition hover:bg-brand-50"
         >
           Continue Shopping
         </button>
-      </div>
-    )
-  }
-
-  if (summaryOpen) {
-    return (
-      <div className="no-scrollbar flex-1 overflow-y-auto px-6 py-6">
-        <button
-          type="button"
-          onClick={() => setSummaryOpen(false)}
-          className="inline-flex cursor-pointer items-center gap-2 text-sm font-bold text-brand-600 transition hover:text-brand-700"
-        >
-          <FaArrowLeft className="text-xs" /> Edit details
-        </button>
-
-        <h3 className="mt-4 flex items-center gap-2 text-lg font-extrabold text-ink-950">
-          <FaCircleCheck className="text-brand-500" /> Order Summary
-        </h3>
-
-        <div className="mt-4 space-y-1.5 rounded-2xl border border-brand-100 bg-brand-50/50 p-4 text-sm">
-          <p className="flex justify-between gap-4"><span className="font-semibold text-ink-900/60">Customer Name</span><span className="font-bold text-ink-950">{form.name}</span></p>
-          <p className="flex justify-between gap-4"><span className="font-semibold text-ink-900/60">Mobile Number</span><span className="font-bold text-ink-950">{form.mobile}</span></p>
-          <p className="flex justify-between gap-4"><span className="font-semibold text-ink-900/60">Address</span><span className="text-right font-bold text-ink-950">{form.address}</span></p>
-          {form.city && (
-            <p className="flex justify-between gap-4"><span className="font-semibold text-ink-900/60">City</span><span className="font-bold text-ink-950">{form.city}</span></p>
-          )}
-        </div>
-
-        <div className="mt-4 space-y-2 rounded-2xl border border-brand-100 p-4">
-          <p className="text-xs font-bold tracking-wide text-ink-900/50 uppercase">Products</p>
-          {items.map((it) => (
-            <p key={it.id} className="flex justify-between text-sm">
-              <span className="font-semibold text-ink-900/75">{it.label} <span className="text-ink-900/45">× {it.quantity}</span></span>
-              <span className="font-bold text-ink-950">{formatINR(it.price * it.quantity)}</span>
-            </p>
-          ))}
-          <div className="border-t border-brand-100 pt-2">
-            <p className="flex justify-between text-sm"><span className="font-semibold text-ink-900/60">Total Boxes</span><span className="font-bold text-brand-700">{boxSummary.boxes}{boxSummary.extra > 0 ? ` + ${boxSummary.extra} bottle${boxSummary.extra === 1 ? '' : 's'}` : ''}</span></p>
-            <p className="flex justify-between text-sm"><span className="font-semibold text-ink-900/60">Total Bottles</span><span className="font-bold text-brand-700">{totalQuantity}</span></p>
-            <p className="mt-1 flex justify-between text-base"><span className="font-bold text-ink-950">Total Amount</span><span className="font-extrabold text-ink-950">{formatINR(totalAmount)}</span></p>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={handleWhatsAppOrder}
-          className="mt-6 flex w-full cursor-pointer items-center justify-center gap-2.5 rounded-2xl bg-[#25D366] px-6 py-4 text-sm font-extrabold text-white shadow-[0_14px_32px_rgba(37,211,102,0.4)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_38px_rgba(37,211,102,0.5)] active:scale-[0.98]"
-        >
-          <FaWhatsapp className="text-xl" />
-          ORDER ON WHATSAPP
-        </button>
-        <p className="mt-3 text-center text-xs text-ink-900/50">
-          Your order will be sent to RAJESH WATER on WhatsApp for confirmation.
-        </p>
       </div>
     )
   }
@@ -241,12 +211,27 @@ export default function Checkout({ onBack, onClose }) {
 
       <h3 className="mt-4 text-lg font-extrabold text-ink-950">Delivery Details</h3>
       <p className="mt-1 text-xs text-ink-900/55">
-        Fill in your details and place the order on WhatsApp.
+        Enter your name and address, then confirm on WhatsApp.
       </p>
 
       <div className="mt-5 space-y-4">
+        {isAndroid() && (
+          <button
+            type="button"
+            onClick={tcAutofill}
+            disabled={tcBusy}
+            className="flex w-full cursor-pointer items-center justify-center gap-2.5 rounded-2xl border-2 border-brand-500 bg-white px-4 py-3 text-sm font-bold text-brand-600 transition-all duration-200 hover:bg-brand-50 disabled:opacity-60"
+          >
+            <span className="grid h-6 w-6 place-items-center rounded-full bg-brand-500 text-white">
+              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 6 9 17l-5-5" />
+              </svg>
+            </span>
+            {tcBusy ? 'Waiting for Truecaller…' : 'Autofill with Truecaller'}
+          </button>
+        )}
         <div>
-          <label htmlFor="co-name" className="mb-1.5 block text-xs font-bold text-ink-900/70">Customer Name</label>
+          <label htmlFor="co-name" className="mb-1.5 block text-xs font-bold text-ink-900/70">Name</label>
           <input id="co-name" type="text" placeholder="Your name" value={form.name} onChange={set('name')} className={inputClass('name')} />
           {errors.name && <p className="mt-1 text-xs font-semibold text-red-500">{errors.name}</p>}
         </div>
@@ -257,38 +242,28 @@ export default function Checkout({ onBack, onClose }) {
         </div>
         <div>
           <label htmlFor="co-address" className="mb-1.5 block text-xs font-bold text-ink-900/70">Delivery Address</label>
-          <textarea id="co-address" rows={3} placeholder="House / street / landmark" value={form.address} onChange={set('address')} className={`${inputClass('address')} resize-none`} />
+          <textarea id="co-address" rows={4} placeholder="House / street / landmark / city" value={form.address} onChange={set('address')} className={`${inputClass('address')} resize-none`} />
           {errors.address && <p className="mt-1 text-xs font-semibold text-red-500">{errors.address}</p>}
-        </div>
-        <div>
-          <label htmlFor="co-city" className="mb-1.5 block text-xs font-bold text-ink-900/70">City</label>
-          <input id="co-city" type="text" placeholder="City (optional)" value={form.city} onChange={set('city')} className={inputClass('city')} />
-        </div>
-        <div>
-          <label htmlFor="co-message" className="mb-1.5 block text-xs font-bold text-ink-900/70">Message <span className="font-medium text-ink-900/40">(optional)</span></label>
-          <textarea id="co-message" rows={2} placeholder="Any instructions for delivery" value={form.message} onChange={set('message')} className={`${inputClass('message')} resize-none`} />
         </div>
       </div>
 
-      {errors.cart && (
-        <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-500">{errors.cart}</p>
-      )}
-
       <div className="mt-5 rounded-2xl border border-brand-100 bg-brand-50/50 px-4 py-3 text-sm">
-        <p className="flex justify-between"><span className="font-semibold text-ink-900/60">Total Bottles</span><span className="font-bold text-brand-700">{totalQuantity}</span></p>
+        <p className="flex justify-between"><span className="font-semibold text-ink-900/60">Total Boxes</span><span className="font-bold text-brand-700">{boxSummary.boxes}{boxSummary.extra > 0 ? ` + ${boxSummary.extra} bottle${boxSummary.extra === 1 ? '' : 's'}` : ''}</span></p>
+        <p className="mt-1 flex justify-between"><span className="font-semibold text-ink-900/60">Total Bottles</span><span className="font-bold text-brand-700">{totalQuantity}</span></p>
         <p className="mt-1 flex justify-between"><span className="font-semibold text-ink-900/60">Total Amount</span><span className="font-extrabold text-ink-950">{formatINR(totalAmount)}</span></p>
       </div>
 
       <button
         type="submit"
         disabled={!meetsMinimum}
-        className={`mt-5 w-full cursor-pointer rounded-2xl px-6 py-4 text-sm font-extrabold text-white transition-all duration-300 ${
+        className={`mt-5 flex w-full cursor-pointer items-center justify-center gap-2.5 rounded-2xl px-6 py-4 text-sm font-extrabold text-white transition-all duration-300 ${
           meetsMinimum
-            ? 'bg-gradient-to-r from-brand-500 to-brand-600 shadow-[0_14px_32px_rgba(31,143,88,0.4)] hover:-translate-y-0.5 active:scale-[0.98]'
+            ? 'bg-[#25D366] shadow-[0_14px_32px_rgba(37,211,102,0.4)] hover:-translate-y-0.5 hover:shadow-[0_18px_38px_rgba(37,211,102,0.5)] active:scale-[0.98]'
             : 'cursor-not-allowed bg-ink-900/15'
         }`}
       >
-        {meetsMinimum ? 'Review Order' : `Minimum order is ${minOrder} bottles`}
+        <FaWhatsapp className="text-xl" />
+        {meetsMinimum ? 'Send Order on WhatsApp' : `Minimum order is ${minOrder} bottles`}
       </button>
     </form>
   )

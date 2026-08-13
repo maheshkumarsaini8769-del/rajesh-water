@@ -2,7 +2,8 @@ import { BUSINESS, boxSizeOf, formatINR } from '../data/business'
 
 /**
  * Build the WhatsApp order message text.
- * @param {{ name: string, mobile: string, address: string, city: string, message: string }} customer
+ * Only Name and Delivery Address are sent (no mobile form anymore).
+ * @param {{ name: string, address: string }} customer
  * @param {{ products: Array<{ label: string, quantity: number, price: number, boxSize?: number }> }} order
  */
 export function buildOrderMessage(customer, order) {
@@ -22,11 +23,8 @@ export function buildOrderMessage(customer, order) {
     '',
     'I want to place a water bottle order.',
     '',
-    `Customer Name: ${customer.name}`,
-    `Mobile: ${customer.mobile}`,
-    `Address: ${customer.address}`,
-    `City: ${customer.city || '—'}`,
-    customer.message ? `Message: ${customer.message}` : null,
+    `Name: ${customer.name || '—'}`,
+    `Delivery Address: ${customer.address || '—'}`,
     '',
     'Order:',
     ...order.products.map((p) => `${p.label} - ${p.quantity} bottles`),
@@ -37,10 +35,8 @@ export function buildOrderMessage(customer, order) {
     '',
     'Please confirm my order.',
   ]
-    .filter((line) => line !== null)
-    .join('\n')
 
-  return lines
+  return lines.join('\n')
 }
 
 /** Open WhatsApp with a pre-filled message. */

@@ -26,7 +26,8 @@ export default function ProductCard({ product, index = 0, reveal = true }) {
     ? [product.image, ...getBottleImages('bottle200', index)]
     : getBottleImages('bottle200', index)
 
-  const handleAdd = () => {
+  const handleAdd = (e) => {
+    e?.preventDefault?.()
     const img = imageRef.current?.querySelector('img')
     const rect = img?.getBoundingClientRect()
 
@@ -52,12 +53,12 @@ export default function ProductCard({ product, index = 0, reveal = true }) {
     >
       <div
         ref={imageRef}
-        className="-mt-12 relative z-10 mb-2 flex h-40 w-full items-center justify-center pointer-events-none sm:-mt-24 sm:mb-3 sm:h-60 md:-mt-32 md:h-68"
+        className="-mt-12 relative z-10 mb-2 flex h-40 w-28 items-end justify-center pointer-events-none sm:-mt-24 sm:mb-3 sm:h-60 sm:w-40 md:-mt-32 md:h-68 md:w-48"
       >
         <BottleImage
           srcs={srcs}
           alt={`${product.label} water bottle`}
-          className="h-full w-auto object-contain drop-shadow-[0_15px_25px_rgba(0,101,141,0.28)] transition-all duration-300 group-hover:-translate-y-2 group-hover:scale-105"
+          className="h-full max-w-full w-full object-contain object-bottom drop-shadow-[0_15px_25px_rgba(0,101,141,0.28)] transition-all duration-300 group-hover:-translate-y-2 group-hover:scale-105"
         />
       </div>
 

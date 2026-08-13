@@ -93,11 +93,12 @@ check('tel link', body.includes('tel:+917742735762'))
 const addButtons = $$('button').filter((b) => b.textContent.includes('Add to Cart'))
 check('add-to-cart buttons present', addButtons.length === 4)
 
-// --- 200 ML box rules: min 78, +78 per press, box price line ---
+// --- 200 ML box rules: min 5 boxes (390 bottles), +78 per press, box price line ---
 const ml200Card = document.querySelectorAll('[data-reveal-group-item]')[0]
-check('200ml card starts at 1 box (78 bottles)', ml200Card.querySelector('.tabular-nums')?.textContent.trim() === '1')
+check('200ml card starts at 5 boxes (390 bottles)', ml200Card.querySelector('.tabular-nums')?.textContent.trim() === '5')
 check('200ml note 1 box = 78 bottles', ml200Card.textContent.includes('1 box = 78 bottles'))
 check('200ml box price line', ml200Card.textContent.includes('₹78 / box (78 bottles)'))
+check('200ml min order line', ml200Card.textContent.includes('Min 390 bottles per order'))
 const ml200Plus = [...ml200Card.querySelectorAll('button')].find(
   (b) => (b.getAttribute('aria-label') || '').includes('Increase'),
 )
@@ -106,10 +107,10 @@ const ml200Minus = [...ml200Card.querySelectorAll('button')].find(
 )
 click(ml200Plus)
 await sleep(30)
-check('200ml plus adds 1 box (1 -> 2)', ml200Card.querySelector('.tabular-nums')?.textContent.trim() === '2')
+check('200ml plus adds 1 box (5 -> 6)', ml200Card.querySelector('.tabular-nums')?.textContent.trim() === '6')
 click(ml200Minus)
 await sleep(30)
-check('200ml minus steps back by 1 box', ml200Card.querySelector('.tabular-nums')?.textContent.trim() === '1')
+check('200ml minus steps back by 1 box', ml200Card.querySelector('.tabular-nums')?.textContent.trim() === '5')
 check('500ml card starts at 4 cartons (48 bottles)', document.querySelectorAll('[data-reveal-group-item]')[1].querySelector('.tabular-nums')?.textContent.trim() === '4')
 check('500ml note 1 carton = 12 bottles', document.querySelectorAll('[data-reveal-group-item]')[1].textContent.includes('1 carton = 12 bottles'))
 

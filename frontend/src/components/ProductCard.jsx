@@ -13,7 +13,8 @@ const SUCCESS = '#2eba62'
 export default function ProductCard({ product, index = 0, reveal = true }) {
   const { items, addItem, flyToCart, openCart } = useCart()
   const boxSize = boxSizeOf(product)
-  const minQty = Math.max(boxSize, 48)
+  const minBoxes = Math.max(product.minBoxes ?? 1, Math.ceil(48 / boxSize))
+  const minQty = boxSize * minBoxes
   const [quantity, setQuantity] = useState(minQty)
   const [added, setAdded] = useState(false)
   const [hover, setHover] = useState(false)
@@ -22,7 +23,7 @@ export default function ProductCard({ product, index = 0, reveal = true }) {
 
   const packWord = boxSize > 12 ? 'box' : 'carton'
   const inCart = items.find((it) => it.id === product.id)?.quantity ?? 0
-  const inCartBoxes = inCart / boxSize
+  const inCartBoxes = Math.floor(inCart / boxSize)
   const atMax = inCartBoxes >= MAX_CARTONS
 
   const srcs = product.image
@@ -104,7 +105,7 @@ export default function ProductCard({ product, index = 0, reveal = true }) {
           <FaMinus className="text-[10px]" />
         </button>
         <span className="min-w-10 text-center text-sm font-extrabold text-[#1a1c1c] tabular-nums">
-          {quantity / boxSize}
+          {Math.round(quantity / boxSize)}
         </span>
         <button
           type="button"
@@ -143,16 +144,19 @@ export default function ProductCard({ product, index = 0, reveal = true }) {
             <>Max {MAX_CARTONS} {packWord}s reached</>
           ) : (
             <>
-              <FaBagShopping className="h-3.5 w-3.5" />
+              <span className="relative">
+                <FaBagShopping className="h-3.5 w-3.5" />
+                {inCartBoxes > 0 && (
+                  <span
+                    data-cart-count={inCartBoxes}
+                    className="absolute -top-2.5 -right-2.5 grid h-4.5 min-w-4.5 place-items-center rounded-full px-1 text-[9px] font-black text-white tabular-nums shadow"
+                    style={{ backgroundColor: SUCCESS }}
+                  >
+                    {inCartBoxes}
+                  </span>
+                )}
+              </span>
               Add to Cart
-              {inCartBoxes > 0 && (
-                <span
-                  data-cart-count={inCartBoxes}
-                  className="ml-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-white/25 px-1 text-[10px] font-black text-white tabular-nums"
-                >
-                  {inCartBoxes}
-                </span>
-              )}
             </>
           )}
         </button>

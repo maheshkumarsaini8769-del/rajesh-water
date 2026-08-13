@@ -7,6 +7,7 @@ export const products = [
     shortLabel: '200 ML',
     price: 1,
     boxSize: 78,
+    minBoxes: 5,
     unit: 'per bottle',
     images: getBottleImages('bottle200', 0),
   },

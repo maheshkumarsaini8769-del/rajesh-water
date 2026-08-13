@@ -52,11 +52,18 @@ export function SiteDataProvider({ children }) {
 
   const value = useMemo(() => {
     const settings = { ...FALLBACK, ...(data?.settings ?? {}) }
+    const remoteProducts = data?.products?.length ? data.products : null
+    const products = remoteProducts
+      ? remoteProducts.map((p) => {
+          const local = localProducts.find((lp) => lp.id === p.id)
+          return local ? { ...local, ...p } : p
+        })
+      : localProducts
     return {
       ready: data != null || error != null,
       error: error ? { message: error.message } : null,
       settings,
-      products: data?.products?.length ? data.products : localProducts,
+      products,
       waLink: (number) =>
         number ? `https://wa.me/91${String(number).replace(/\D/g, '')}` : '#',
       telLink: (number) =>

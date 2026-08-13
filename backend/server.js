@@ -354,15 +354,17 @@ app.put('/api/products/:id', requireAuth, (req, res) => {
   const next = products.map((p) => {
     if (p.id !== req.params.id && p._id !== req.params.id) return p
     found = p
-    return {
-      ...p,
-      label: typeof body.label === 'string' && body.label.trim() ? body.label.trim() : p.label,
-      price: Number.isFinite(Number(body.price)) ? Math.round(Number(body.price) * 100) / 100 : p.price,
-      unit: typeof body.unit === 'string' && body.unit.trim() ? body.unit.trim() : p.unit,
-      image: typeof body.image === 'string' ? body.image : p.image,
-      stock: Number.isFinite(Number(body.stock)) ? Math.round(Number(body.stock)) : p.stock,
-      enabled: typeof body.enabled === 'boolean' ? body.enabled : p.enabled,
-    }
+      return {
+        ...p,
+        label: typeof body.label === 'string' && body.label.trim() ? body.label.trim() : p.label,
+        price: Number.isFinite(Number(body.price)) ? Math.round(Number(body.price) * 100) / 100 : p.price,
+        boxSize: Number.isFinite(Number(body.boxSize)) ? Math.max(1, Math.round(Number(body.boxSize))) : p.boxSize,
+        minBoxes: Number.isFinite(Number(body.minBoxes)) ? Math.max(1, Math.round(Number(body.minBoxes))) : p.minBoxes,
+        unit: typeof body.unit === 'string' && body.unit.trim() ? body.unit.trim() : p.unit,
+        image: typeof body.image === 'string' ? body.image : p.image,
+        stock: Number.isFinite(Number(body.stock)) ? Math.round(Number(body.stock)) : p.stock,
+        enabled: typeof body.enabled === 'boolean' ? body.enabled : p.enabled,
+      }
   })
   if (!found) return res.status(404).json({ error: 'Product not found' })
   saveProducts(next)

@@ -1,0 +1,23 @@
+# dependencies
+node_modules/
+
+# builds
+dist/
+dist-ssr/
+
+# env / secrets (never commit real credentials)
+.env
+.env.*
+!.env.example
+
+# runtime data (customer orders / products backup)
+backend/data/
+
+# logs
+*.log
+logs/
+
+# editor
+.vscode/*
+.idea
+.DS_Store

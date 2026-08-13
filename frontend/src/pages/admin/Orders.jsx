@@ -1,5 +1,5 @@
-﻿import { useCallback, useEffect, useState } from 'react'
-import { FaTrashCan } from 'react-icons/fa6'
+﻿import { useCallback, useEffect, useMemo, useState } from 'react'
+import { FaMagnifyingGlass, FaTrashCan, FaXmark } from 'react-icons/fa6'
 
 import { formatINR } from '../../data/business'
 import { api } from '../../utils/api'
@@ -14,6 +14,14 @@ import {
 } from './ui'
 
 const STATUSES = ['pending', 'confirmed', 'delivered', 'cancelled']
+
+const STATUS_CHIP_STYLES = {
+  all: 'border-ink-900/15 bg-ink-900/5 text-ink-900/70',
+  pending: 'border-amber-200 bg-amber-50 text-amber-700',
+  confirmed: 'border-aqua-200 bg-aqua-50 text-aqua-700',
+  delivered: 'border-brand-200 bg-brand-50 text-brand-700',
+  cancelled: 'border-red-200 bg-red-50 text-red-600',
+}
 
 const fmtDate = (iso) =>
   new Date(iso).toLocaleString('en-IN', {
@@ -30,6 +38,8 @@ export default function Orders() {
   const [selected, setSelected] = useState(null)
   const [confirmDelete, setConfirmDelete] = useState(null)
   const [busyId, setBusyId] = useState(null)
+  const [query, setQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
 
   const load = useCallback(() => {
     setLoading(true)
@@ -42,6 +52,28 @@ export default function Orders() {
   }, [])
 
   useEffect(load, [load])
+
+  const counts = useMemo(() => {
+    const c = { all: 0, pending: 0, confirmed: 0, delivered: 0, cancelled: 0 }
+    for (const o of orders ?? []) {
+      c.all += 1
+      if (c[o.status] != null) c[o.status] += 1
+    }
+    return c
+  }, [orders])
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    return (orders ?? []).filter((o) => {
+      if (statusFilter !== 'all' && o.status !== statusFilter) return false
+      if (!q) return true
+      return (
+        (o.orderId || '').toLowerCase().includes(q) ||
+        (o.customer?.name || '').toLowerCase().includes(q) ||
+        (o.customer?.mobile || '').includes(q)
+      )
+    })
+  }, [orders, query, statusFilter])
 
   const changeStatus = (id, status) => {
     setBusyId(id)
@@ -68,27 +100,86 @@ export default function Orders() {
       .finally(() => setBusyId(null))
   }
 
-  if (loading) return <Spinner label="Loading ordersâ€¦" />
+  if (loading) return <Spinner label="Loading orders…" />
   if (error && !orders) return <ErrorState message={error} onRetry={load} />
 
   return (
     <Card
       title="Orders"
-      description={`${orders?.length ?? 0} orders â€” newest first`}
+      description={`${filtered.length} of ${orders?.length ?? 0} orders — newest first`}
       actions={
-        <button
-          type="button"
-          onClick={load}
-          className="rounded-xl border border-brand-100 bg-white px-4 py-2 text-xs font-bold text-ink-900/55 transition-colors hover:text-brand-700"
-        >
-          Refresh
-        </button>
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <label className="relative block">
+            <FaMagnifyingGlass className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm text-ink-900/35" />
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search order, name, mobile…"
+              className="w-56 cursor-text rounded-xl border border-brand-100 bg-white py-2 pr-8 pl-8 text-xs font-bold text-ink-950 outline-none transition-all placeholder:font-semibold focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+            />
+            {query && (
+              <button
+                type="button"
+                aria-label="Clear search"
+                onClick={() => setQuery('')}
+                className="absolute top-1/2 right-2 grid h-5 w-5 -translate-y-1/2 cursor-pointer place-items-center rounded-full bg-ink-900/10 text-ink-900/50 hover:bg-ink-900/20"
+              >
+                <FaXmark className="text-[10px]" />
+              </button>
+            )}
+          </label>
+          <button
+            type="button"
+            onClick={load}
+            className="rounded-xl border border-brand-100 bg-white px-4 py-2 text-xs font-bold text-ink-900/55 transition-colors hover:text-brand-700"
+          >
+            Refresh
+          </button>
+        </div>
       }
     >
-      {orders.length === 0 ? (
+      <div className="no-scrollbar -mx-1 mb-5 flex gap-2 overflow-x-auto px-1">
+        {['all', ...STATUSES].map((s) => (
+          <button
+            key={s}
+            type="button"
+            onClick={() => setStatusFilter(s)}
+            className={`inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-bold transition-all ${
+              statusFilter === s
+                ? 'border-ink-950 bg-ink-950 text-white shadow-md'
+                : `${STATUS_CHIP_STYLES[s]} hover:-translate-y-0.5`
+            }`}
+          >
+            {s === 'all' ? 'All' : STATUS_LABELS[s]}
+            <span
+              className={`rounded-full px-1.5 py-0.5 text-[10px] tabular-nums ${
+                statusFilter === s ? 'bg-white/20 text-white' : 'bg-white/80'
+              }`}
+            >
+              {counts[s] ?? 0}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {error && (
+        <p className="mb-4 flex items-center justify-between gap-2 rounded-xl bg-red-50 px-4 py-2.5 text-xs font-bold text-red-500">
+          <span>{error}</span>
+          <button type="button" onClick={() => setError(null)} className="cursor-pointer hover:opacity-70">
+            <FaXmark />
+          </button>
+        </p>
+      )}
+
+      {filtered.length === 0 ? (
         <EmptyState
-          title="No orders yet"
-          message="Orders placed through the website will appear here automatically."
+          title={query || statusFilter !== 'all' ? 'No matching orders' : 'No orders yet'}
+          message={
+            query || statusFilter !== 'all'
+              ? 'Try a different search or filter.'
+              : 'Orders placed through the website will appear here automatically.'
+          }
         />
       ) : (
         <div className="overflow-x-auto">
@@ -108,7 +199,7 @@ export default function Orders() {
               </tr>
             </thead>
             <tbody>
-              {orders.map((order) => (
+              {filtered.map((order) => (
                 <tr
                   key={order._id}
                   className="border-b border-brand-50 transition-colors hover:bg-brand-50/40"
@@ -234,12 +325,12 @@ export default function Orders() {
                 <p className="mt-1 font-extrabold text-ink-950">{selected.customer.name}</p>
                 <p className="text-sm text-ink-900/65">
                   {selected.customer.mobile}
-                  {selected.customer.city && ` Â· ${selected.customer.city}`}
+                  {selected.customer.city && ` · ${selected.customer.city}`}
                 </p>
                 <p className="mt-1 text-sm text-ink-900/65">{selected.customer.address}</p>
                 {selected.customer.message && (
                   <p className="mt-2 rounded-xl bg-white px-3 py-2 text-xs text-ink-900/70 italic">
-                    â€œ{selected.customer.message}â€
+                    “{selected.customer.message}”
                   </p>
                 )}
               </div>

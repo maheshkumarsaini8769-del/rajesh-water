@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
-  FaBottleWater,
   FaBars,
+  FaBottleWater,
   FaCircleUser,
+  FaClipboardList,
   FaEnvelope,
   FaGaugeHigh,
   FaLockOpen,
@@ -25,12 +26,20 @@ import { Spinner } from './admin/ui'
 
 const TABS = [
   { id: 'dashboard', label: 'Dashboard', icon: FaGaugeHigh },
-  { id: 'orders', label: 'Orders', icon: FaBottleWater },
+  { id: 'orders', label: 'Orders', icon: FaClipboardList },
   { id: 'products', label: 'Products', icon: FaBottleWater },
   { id: 'customers', label: 'Customers', icon: FaUsers },
   { id: 'whatsapp', label: 'WhatsApp Orders', icon: FaWhatsapp },
   { id: 'settings', label: 'Settings', icon: FaEnvelope },
 ]
+
+const TAB_IDS = TABS.map((t) => t.id)
+
+function tabFromHash() {
+  if (typeof window === 'undefined') return 'dashboard'
+  const part = (window.location.hash || '').split('/').pop()
+  return TAB_IDS.includes(part) ? part : 'dashboard'
+}
 
 const PAGE_TITLES = Object.fromEntries(TABS.map((t) => [t.id, t.label]))
 
@@ -38,6 +47,14 @@ function LoginGate({ onUnlock }) {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [tcAdminPhone, setTcAdminPhone] = useState('')
+
+  useEffect(() => {
+    api
+      .get('/auth/truecaller/config')
+      .then((cfg) => setTcAdminPhone(String(cfg.adminPhone || '').replace(/\D/g, '')))
+      .catch(() => {})
+  }, [])
 
   const submit = (e) => {
     e.preventDefault()
@@ -161,7 +178,8 @@ function LoginGate({ onUnlock }) {
               {busy ? 'Waiting for Truecaller…' : 'Login with Truecaller'}
             </button>
             <p className="mt-1.5 text-center text-[11px] font-semibold text-ink-900/45">
-              {androidNote()} Your number must be {`+91`} 7742735762.
+              {androidNote()}
+              {tcAdminPhone ? ` Your number must be +91 ${tcAdminPhone}.` : ''}
             </p>
           </div>
         )}
@@ -180,8 +198,26 @@ function LoginGate({ onUnlock }) {
 export default function Admin() {
   const [admin, setAdmin] = useState(null)
   const [checking, setChecking] = useState(true)
-  const [tab, setTab] = useState('dashboard')
+  const [tab, setTab] = useState(tabFromHash)
   const [menuOpen, setMenuOpen] = useState(false)
+
+  useEffect(() => {
+    const onHash = () => {
+      const next = tabFromHash()
+      setTab((prev) => (prev === next ? prev : next))
+      setMenuOpen(false)
+    }
+    window.addEventListener('hashchange', onHash)
+    return () => window.removeEventListener('hashchange', onHash)
+  }, [])
+
+  const goTab = (id) => {
+    setTab(id)
+    setMenuOpen(false)
+    if (typeof window !== 'undefined') {
+      window.location.hash = `#/admin/${id}`
+    }
+  }
 
   const verifySession = useCallback(() => {
     if (!getToken()) {
@@ -220,10 +256,7 @@ export default function Admin() {
         <button
           key={t.id}
           type="button"
-          onClick={() => {
-            setTab(t.id)
-            setMenuOpen(false)
-          }}
+          onClick={() => goTab(t.id)}
           className={`flex w-full cursor-pointer items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold transition-all duration-200 ${
             tab === t.id
               ? 'bg-gradient-to-r from-brand-500 to-brand-600 text-white shadow-[0_8px_20px_rgba(31,143,88,0.3)]'

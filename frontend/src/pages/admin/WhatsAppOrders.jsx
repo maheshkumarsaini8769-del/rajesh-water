@@ -33,14 +33,14 @@ export default function WhatsAppOrders() {
 
   useEffect(load, [load])
 
-  if (loading) return <Spinner label="Loading WhatsApp ordersâ€¦" />
+  if (loading) return <Spinner label="Loading WhatsApp orders…" />
   if (error && !orders) return <ErrorState message={error} onRetry={load} />
 
   return (
     <>
       <Card
         title="WhatsApp orders"
-        description="Every order placed through the website â€” chat with the customer or call them directly."
+        description="Every order placed through the website — chat with the customer or call them directly."
         actions={
           <button
             type="button"
@@ -136,12 +136,12 @@ export default function WhatsAppOrders() {
               <p className="mt-1 font-extrabold text-ink-950">{selected.customer.name}</p>
               <p className="text-sm text-ink-900/65">
                 {selected.customer.mobile}
-                {selected.customer.city && ` Â· ${selected.customer.city}`}
+                {selected.customer.city && ` · ${selected.customer.city}`}
               </p>
               <p className="mt-1 text-sm text-ink-900/65">{selected.customer.address}</p>
               {selected.customer.message && (
                 <p className="mt-2 rounded-xl bg-white px-3 py-2 text-xs text-ink-900/70 italic">
-                  â€œ{selected.customer.message}â€
+                  “{selected.customer.message}”
                 </p>
               )}
             </div>

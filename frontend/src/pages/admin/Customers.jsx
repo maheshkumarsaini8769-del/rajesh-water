@@ -1,5 +1,5 @@
-﻿import { useCallback, useEffect, useState } from 'react'
-import { FaUser } from 'react-icons/fa6'
+﻿import { useCallback, useEffect, useMemo, useState } from 'react'
+import { FaMagnifyingGlass, FaUser, FaXmark } from 'react-icons/fa6'
 
 import { formatINR } from '../../data/business'
 import { api } from '../../utils/api'
@@ -21,6 +21,7 @@ export default function Customers() {
   const [selected, setSelected] = useState(null)
   const [history, setHistory] = useState(null)
   const [historyLoading, setHistoryLoading] = useState(false)
+  const [query, setQuery] = useState('')
 
   const load = useCallback(() => {
     setLoading(true)
@@ -34,6 +35,17 @@ export default function Customers() {
 
   useEffect(load, [load])
 
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return customers ?? []
+    return (customers ?? []).filter(
+      (c) =>
+        (c.name || '').toLowerCase().includes(q) ||
+        (c.mobile || '').includes(q) ||
+        (c.address || '').toLowerCase().includes(q),
+    )
+  }, [customers, query])
+
   const openHistory = (customer) => {
     setSelected(customer)
     setHistory(null)
@@ -45,28 +57,54 @@ export default function Customers() {
       .finally(() => setHistoryLoading(false))
   }
 
-  if (loading) return <Spinner label="Loading customersâ€¦" />
+  if (loading) return <Spinner label="Loading customers…" />
   if (error && !customers) return <ErrorState message={error} onRetry={load} />
 
   return (
     <>
       <Card
         title="Customers"
-        description={`${customers?.length ?? 0} customers â€” click a customer to see order history`}
+        description={`${filtered.length} of ${customers?.length ?? 0} customers — click a customer to see order history`}
         actions={
-          <button
-            type="button"
-            onClick={load}
-            className="rounded-xl border border-brand-100 bg-white px-4 py-2 text-xs font-bold text-ink-900/55 transition-colors hover:text-brand-700"
-          >
-            Refresh
-          </button>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <label className="relative block">
+              <FaMagnifyingGlass className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm text-ink-900/35" />
+              <input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search name, mobile, address…"
+                className="w-56 cursor-text rounded-xl border border-brand-100 bg-white py-2 pr-8 pl-8 text-xs font-bold text-ink-950 outline-none transition-all placeholder:font-semibold focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+              />
+              {query && (
+                <button
+                  type="button"
+                  aria-label="Clear search"
+                  onClick={() => setQuery('')}
+                  className="absolute top-1/2 right-2 grid h-5 w-5 -translate-y-1/2 cursor-pointer place-items-center rounded-full bg-ink-900/10 text-ink-900/50 hover:bg-ink-900/20"
+                >
+                  <FaXmark className="text-[10px]" />
+                </button>
+              )}
+            </label>
+            <button
+              type="button"
+              onClick={load}
+              className="rounded-xl border border-brand-100 bg-white px-4 py-2 text-xs font-bold text-ink-900/55 transition-colors hover:text-brand-700"
+            >
+              Refresh
+            </button>
+          </div>
         }
       >
-        {customers.length === 0 ? (
+        {filtered.length === 0 ? (
           <EmptyState
-            title="No customers yet"
-            message="Customer details are built from orders placed on the website."
+            title={query ? 'No matching customers' : 'No customers yet'}
+            message={
+              query
+                ? 'Try a different search.'
+                : 'Customer details are built from orders placed on the website.'
+            }
           />
         ) : (
           <div className="overflow-x-auto">
@@ -82,7 +120,7 @@ export default function Customers() {
                 </tr>
               </thead>
               <tbody>
-                {customers.map((c) => (
+                {filtered.map((c) => (
                   <tr
                     key={c._id}
                     onClick={() => openHistory(c)}
@@ -120,12 +158,12 @@ export default function Customers() {
 
       {selected && (
         <Modal
-          title={`${selected.name} â€” order history`}
+          title={`${selected.name} — order history`}
           onClose={() => setSelected(null)}
           wide
         >
           {historyLoading ? (
-            <Spinner label="Loading historyâ€¦" />
+            <Spinner label="Loading history…" />
           ) : (
             <div className="space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-brand-50/50 p-4">

@@ -1,5 +1,6 @@
 ﻿import { useCallback, useEffect, useState } from 'react'
 import {
+  FaArrowRight,
   FaBottleWater,
   FaChartLine,
   FaCircleCheck,
@@ -10,10 +11,19 @@ import {
 
 import { formatINR } from '../../data/business'
 import { api } from '../../utils/api'
-import { Card, EmptyState, ErrorState, Spinner } from './ui'
+import { Card, EmptyState, ErrorState, Spinner, StatusBadge } from './ui'
+
+const fmtDate = (iso) =>
+  new Date(iso).toLocaleString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
 
 export default function Dashboard() {
   const [data, setData] = useState(null)
+  const [recent, setRecent] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -25,11 +35,15 @@ export default function Dashboard() {
       .then(setData)
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false))
+    api
+      .get('/orders?limit=6')
+      .then((list) => setRecent(Array.isArray(list) ? list : []))
+      .catch(() => {})
   }, [])
 
   useEffect(load, [load])
 
-  if (loading) return <Spinner label="Loading dashboardâ€¦" />
+  if (loading) return <Spinner label="Loading dashboard…" />
   if (error) return <ErrorState message={error} onRetry={load} />
 
   const stats = [
@@ -73,7 +87,7 @@ export default function Dashboard() {
         description="Orders and sales per day"
         actions={
           <span className="inline-flex items-center gap-1.5 text-xs font-bold text-ink-900/45">
-            <FaChartLine className="text-brand-500" /> Sales Â· Orders
+            <FaChartLine className="text-brand-500" /> Sales · Orders
           </span>
         }
       >
@@ -97,7 +111,7 @@ export default function Dashboard() {
                     title={`Orders: ${day.orders}`}
                   />
                   <div className="pointer-events-none absolute -top-1 left-1/2 z-10 -translate-x-1/2 rounded-lg bg-ink-950 px-2 py-1 text-[10px] font-bold whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
-                    {day.orders} orders Â· {formatINR(day.sales)}
+                    {day.orders} orders · {formatINR(day.sales)}
                   </div>
                 </div>
                 <span className="text-[11px] font-bold text-ink-900/50">{day.label}</span>
@@ -113,6 +127,61 @@ export default function Dashboard() {
             <span className="h-2.5 w-2.5 rounded-full bg-aqua-500" /> Sales
           </span>
         </div>
+      </Card>
+
+      <Card
+        title="Recent orders"
+        description="Newest orders first — open the Orders tab for full control"
+        actions={
+          <a
+            href="#/admin/orders"
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-brand-100 bg-white px-4 py-2 text-xs font-bold text-brand-700 transition-colors hover:bg-brand-50"
+          >
+            All orders <FaArrowRight className="text-[10px]" />
+          </a>
+        }
+      >
+        {recent && recent.length === 0 ? (
+          <EmptyState
+            title="No orders yet"
+            message="Orders placed through the website will appear here."
+          />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[640px] text-left text-sm">
+              <thead>
+                <tr className="border-b border-brand-100 text-[11px] font-bold tracking-wide text-ink-900/50 uppercase">
+                  <th className="py-2.5 pr-4">Order</th>
+                  <th className="py-2.5 pr-4">Customer</th>
+                  <th className="py-2.5 pr-4 text-right">Bottles</th>
+                  <th className="py-2.5 pr-4 text-right">Amount</th>
+                  <th className="py-2.5 pr-4">Placed</th>
+                  <th className="py-2.5 text-right">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(recent ?? []).map((o) => (
+                  <tr key={o._id} className="border-b border-brand-50 transition-colors hover:bg-brand-50/40">
+                    <td className="py-3 pr-4 font-bold whitespace-nowrap text-brand-700">{o.orderId}</td>
+                    <td className="py-3 pr-4 font-semibold text-ink-950">{o.customer?.name}</td>
+                    <td className="py-3 pr-4 text-right font-bold text-ink-950 tabular-nums">
+                      {o.totalQuantity}
+                    </td>
+                    <td className="py-3 pr-4 text-right font-bold text-brand-600 tabular-nums">
+                      {formatINR(o.totalAmount)}
+                    </td>
+                    <td className="py-3 pr-4 text-xs whitespace-nowrap text-ink-900/50">
+                      {fmtDate(o.createdAt)}
+                    </td>
+                    <td className="py-3 text-right">
+                      <StatusBadge status={o.status} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </Card>
     </div>
   )

@@ -81,7 +81,8 @@ export default function CartDrawer() {
         { opacity: 1, y: 0, duration: 0.4, stagger: 0.07, ease: 'power2.out', delay: 0.2 },
       )
     }
-  }, [isOpen, step, items])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, step])
 
   if (!isOpen) return null
 

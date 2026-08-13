@@ -244,6 +244,7 @@ app.get('/api/auth/truecaller/config', (_req, res) => {
     partnerKey: TC_PARTNER_KEY,
     partnerName: TC_PARTNER_NAME,
     ctaColor: TC_CTA_COLOR,
+    adminPhone: TC_ADMIN_PHONE,
   })
 })
 
@@ -338,11 +339,14 @@ app.post('/api/products', requireAuth, (req, res) => {
     id,
     label: typeof body.label === 'string' ? body.label.trim() : 'NEW PRODUCT',
     price: Number.isFinite(Number(body.price)) ? Math.round(Number(body.price) * 100) / 100 : 0,
+    boxSize: Number.isFinite(Number(body.boxSize)) ? Math.max(1, Math.round(Number(body.boxSize))) : undefined,
+    minBoxes: Number.isFinite(Number(body.minBoxes)) ? Math.max(1, Math.round(Number(body.minBoxes))) : undefined,
     unit: typeof body.unit === 'string' ? body.unit.trim() : 'per bottle',
     image: typeof body.image === 'string' ? body.image : '',
     stock: Number.isFinite(Number(body.stock)) ? Math.round(Number(body.stock)) : 999,
     enabled: body.enabled !== false,
   }
+  for (const key of ['boxSize', 'minBoxes']) if (product[key] === undefined) delete product[key]
   const next = [...products, product]
   saveProducts(next)
   res.status(201).json(product)

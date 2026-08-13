@@ -49,13 +49,13 @@ export default function Settings() {
       .finally(() => setSaving(false))
   }
 
-  if (loading) return <Spinner label="Loading settingsâ€¦" />
+  if (loading) return <Spinner label="Loading settings…" />
   if (error && !settings) return <ErrorState message={error} onRetry={load} />
 
   const fields = [
     { key: 'businessName', label: 'Business name', hint: 'Shown in the navbar, footer and order messages.' },
-    { key: 'whatsappNumber', label: 'WhatsApp number', hint: 'Digits only, e.g. 7742735762 â€” orders go to this number.' },
-    { key: 'contactNumber', label: 'Contact number', hint: 'Digits only â€” used for the call buttons.' },
+    { key: 'whatsappNumber', label: 'WhatsApp number', hint: 'Digits only, e.g. 7742735762 — orders go to this number.' },
+    { key: 'contactNumber', label: 'Contact number', hint: 'Digits only — used for the call buttons.' },
     { key: 'deliveryMessage', label: 'Delivery message', hint: 'The delivery info shown on the contact section.' },
     { key: 'minOrder', label: 'Minimum order quantity', hint: 'Customers must order at least this many bottles.' },
   ]
@@ -74,7 +74,7 @@ export default function Settings() {
           }`}
         >
           <FaCircleCheck />
-          {saved ? 'Saved âœ“' : saving ? 'Savingâ€¦' : 'Save settings'}
+          {saved ? 'Saved ✓' : saving ? 'Saving…' : 'Save settings'}
         </button>
       }
     >
@@ -84,21 +84,36 @@ export default function Settings() {
         </p>
       )}
       <div className="grid gap-5 sm:grid-cols-2">
-        {fields.map((f) => (
-          <label key={f.key} className="block">
-            <span className="mb-1.5 block text-xs font-bold tracking-wide text-ink-900/70 uppercase">
-              {f.label}
-            </span>
-            <input
-              type={f.key === 'minOrder' ? 'number' : 'text'}
-              value={settings[f.key] ?? ''}
-              min={f.key === 'minOrder' ? 1 : undefined}
-              onChange={set(f.key)}
-              className={inputClass}
-            />
-            {f.hint && <span className="mt-1 block text-[11px] text-ink-900/45">{f.hint}</span>}
-          </label>
-        ))}
+        {fields.map((f) =>
+          f.key === 'deliveryMessage' ? (
+            <label key={f.key} className="block sm:col-span-2">
+              <span className="mb-1.5 block text-xs font-bold tracking-wide text-ink-900/70 uppercase">
+                {f.label}
+              </span>
+              <textarea
+                rows={3}
+                value={settings[f.key] ?? ''}
+                onChange={set(f.key)}
+                className={`${inputClass} resize-none`}
+              />
+              {f.hint && <span className="mt-1 block text-[11px] text-ink-900/45">{f.hint}</span>}
+            </label>
+          ) : (
+            <label key={f.key} className="block">
+              <span className="mb-1.5 block text-xs font-bold tracking-wide text-ink-900/70 uppercase">
+                {f.label}
+              </span>
+              <input
+                type={f.key === 'minOrder' ? 'number' : 'text'}
+                value={settings[f.key] ?? ''}
+                min={f.key === 'minOrder' ? 1 : undefined}
+                onChange={set(f.key)}
+                className={inputClass}
+              />
+              {f.hint && <span className="mt-1 block text-[11px] text-ink-900/45">{f.hint}</span>}
+            </label>
+          ),
+        )}
       </div>
       <div className="mt-7 border-t border-brand-100 pt-6">
         <ImageInput

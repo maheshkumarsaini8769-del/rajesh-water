@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   FaBottleWater,
   FaCircleExclamation,
@@ -90,6 +90,22 @@ export function Card({ title, description, actions, children }) {
 }
 
 export function Modal({ title, onClose, children, wide }) {
+  const onCloseRef = useRef(onClose)
+  onCloseRef.current = onClose
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === 'Escape') onCloseRef.current()
+    }
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', onKey)
+    return () => {
+      document.body.style.overflow = prevOverflow
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [])
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-ink-950/40 p-0 backdrop-blur-sm sm:items-center sm:p-6"
@@ -100,9 +116,9 @@ export function Modal({ title, onClose, children, wide }) {
         aria-modal="true"
         aria-label={title}
         onClick={(e) => e.stopPropagation()}
-        className={`max-h-[92svh] w-full overflow-y-auto rounded-t-3xl border border-brand-100 bg-white shadow-2xl sm:rounded-3xl ${
+        className="w-full max-h-[92svh] origin-bottom overflow-y-auto rounded-t-3xl border border-brand-100 bg-white shadow-2xl sm:origin-center sm:rounded-3xl animate-modal-in ${
           wide ? 'sm:max-w-3xl' : 'sm:max-w-lg'
-        }`}
+        }"
       >
         <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-brand-100 bg-white/95 px-6 py-4 backdrop-blur">
           <h3 className="text-base font-extrabold tracking-tight text-ink-950">{title}</h3>

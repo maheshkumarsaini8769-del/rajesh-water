@@ -39,7 +39,17 @@ export default function Products() {
 
   const startEdit = (p) => {
     setEditingId(p._id)
-    setDraft({ label: p.label, price: p.price, unit: p.unit, image: p.image, stock: p.stock })
+    setConfirmDelete(null)
+    setDraft({
+      label: p.label,
+      price: p.price,
+      unit: p.unit,
+      image: p.image,
+      stock: p.stock,
+      boxSize: p.boxSize ?? '',
+      minBoxes: p.minBoxes ?? '',
+      enabled: p.enabled,
+    })
   }
 
   const save = (product) => {
@@ -60,6 +70,13 @@ export default function Products() {
     if (typeof draft.image === 'string' && draft.image.length > 0) {
       patch.image = draft.image
     }
+    if (draft.boxSize !== '' && Number.isFinite(Number(draft.boxSize))) {
+      patch.boxSize = Math.max(1, Math.round(Number(draft.boxSize)))
+    }
+    if (draft.minBoxes !== '' && Number.isFinite(Number(draft.minBoxes))) {
+      patch.minBoxes = Math.max(1, Math.round(Number(draft.minBoxes)))
+    }
+    patch.enabled = draft.enabled !== false
     api
       .put(`/products/${product.id}`, patch)
       .then((updated) => {
@@ -136,7 +153,7 @@ export default function Products() {
     <>
       <Card
         title="Products"
-        description="Bottle sizes — price, image, availability and stock. Add new sizes anytime."
+        description={`${products.filter((p) => p.enabled !== false).length} active of ${products.length} products — price, image, availability and stock. Add new sizes anytime.`}
         actions={
           <button
             type="button"
@@ -179,6 +196,11 @@ export default function Products() {
                   <p className="mt-1 text-xs font-bold text-ink-900/55">
                     Stock: {p.stock} bottles
                   </p>
+                  {p.boxSize != null && (
+                    <p className="mt-0.5 text-[11px] text-ink-900/45">
+                      {p.boxSize} per box{p.minBoxes ? ` · min ${p.minBoxes} box${p.minBoxes === 1 ? '' : 'es'} per order` : ''}
+                    </p>
+                  )}
                 </div>
 
                 {editing ? (
@@ -221,7 +243,29 @@ export default function Products() {
                         className={inputClass}
                       />
                     </label>
-                    <label className="block sm:col-span-2 lg:col-span-2">
+                    <label className="block">
+                      <span className="mb-1 block text-[11px] font-bold tracking-wide text-ink-900/55 uppercase">Bottles per box</span>
+                      <input
+                        type="number"
+                        min="1"
+                        value={draft.boxSize}
+                        placeholder={p.boxSize ?? ''}
+                        onChange={(e) => setDraft((d) => ({ ...d, boxSize: e.target.value }))}
+                        className={inputClass}
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="mb-1 block text-[11px] font-bold tracking-wide text-ink-900/55 uppercase">Min boxes per order</span>
+                      <input
+                        type="number"
+                        min="1"
+                        value={draft.minBoxes}
+                        placeholder={p.minBoxes ?? ''}
+                        onChange={(e) => setDraft((d) => ({ ...d, minBoxes: e.target.value }))}
+                        className={inputClass}
+                      />
+                    </label>
+                    <label className="block">
                       <span className="mb-1 block text-[11px] font-bold tracking-wide text-ink-900/55 uppercase">Image URL</span>
                       <input
                         type="text"
@@ -231,6 +275,27 @@ export default function Products() {
                         className={inputClass}
                       />
                     </label>
+                    <div className="flex items-center gap-3 sm:col-span-2 lg:col-span-3">
+                      <span className="text-[11px] font-bold tracking-wide text-ink-900/55 uppercase">Available on website</span>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={draft.enabled !== false}
+                        onClick={() => setDraft((d) => ({ ...d, enabled: d.enabled !== false ? false : true }))}
+                        className={`relative h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors ${
+                          draft.enabled !== false ? 'bg-brand-500' : 'bg-ink-900/20'
+                        }`}
+                      >
+                        <span
+                          className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                            draft.enabled !== false ? 'translate-x-5' : ''
+                          }`}
+                        />
+                      </button>
+                      <span className="text-xs font-semibold text-ink-900/55">
+                        {draft.enabled !== false ? 'Enabled — customers can order it' : 'Disabled — hidden from customers'}
+                      </span>
+                    </div>
                     <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-3">
                       <button
                         type="button"

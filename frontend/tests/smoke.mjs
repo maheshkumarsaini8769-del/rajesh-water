@@ -130,6 +130,9 @@ const ml500addBtn = [...ml500Card.querySelectorAll('button')].find(
   (b) => b.getAttribute('data-in-cart-boxes') != null,
 )
 check('add button shows cartons in cart', ml500addBtn && ml500addBtn.getAttribute('data-in-cart-boxes') === '4')
+await sleep(1200)
+const ml500countBadge = ml500addBtn?.querySelector('[data-cart-count]')
+check('add button badge displays carton count', ml500countBadge && ml500countBadge.textContent.trim() === '4')
 
 // --- Open cart ---
 click(document.querySelector('[data-cart-target]'))

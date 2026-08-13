@@ -141,15 +141,18 @@ export default function ProductCard({ product, index = 0, reveal = true }) {
             </>
           ) : atMax ? (
             <>Max {MAX_CARTONS} {packWord}s reached</>
-          ) : inCartBoxes > 0 ? (
-            <>
-              <FaBagShopping className="h-3.5 w-3.5" />
-              {inCartBoxes} in cart
-            </>
           ) : (
             <>
               <FaBagShopping className="h-3.5 w-3.5" />
               Add to Cart
+              {inCartBoxes > 0 && (
+                <span
+                  data-cart-count={inCartBoxes}
+                  className="ml-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-white/25 px-1 text-[10px] font-black text-white tabular-nums"
+                >
+                  {inCartBoxes}
+                </span>
+              )}
             </>
           )}
         </button>

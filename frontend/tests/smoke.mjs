@@ -123,7 +123,7 @@ await sleep(200)
 click(addButtons2[1])
 await sleep(400)
 let badge = document.querySelector('[data-cart-badge]')
-check('cart badge shows 48', badge && badge.textContent.trim() === '48')
+check('cart badge shows 4 boxes', badge && badge.textContent.trim() === '4')
 const stored = JSON.parse(localStorage.getItem('rajesh-water-cart') || '[]')
 check('cart persisted to localStorage', stored.length === 1 && stored[0].quantity === 48)
 const ml500Card = document.querySelectorAll('[data-reveal-group-item]')[1]
@@ -154,7 +154,7 @@ for (let i = 0; i < 3; i += 1) {
 await sleep(600)
 const drawerWarn = document.querySelector('[role="dialog"]')
 check('min order warning', drawerWarn.textContent.includes('Minimum order is 48 bottles'))
-check('your order progress', drawerWarn.textContent.includes('Your order: 12 / 48 bottles'))
+check('your order progress', drawerWarn.textContent.includes('Your order: 1 box') && drawerWarn.textContent.includes('Min 48 bottles'))
 const disabledBtn = drawerWarn.querySelector('button[disabled]')
 check('checkout disabled below 48', !!(disabledBtn && disabledBtn.textContent.includes('36 more bottles')))
 
@@ -173,7 +173,7 @@ await sleep(600)
 const drawer2 = document.querySelector('[role="dialog"]')
 check('min order met state', drawer2.textContent.includes('Minimum order met'))
 check('success check on min', drawer2.textContent.includes('✓'))
-check('boxes shown in cart', drawer2.textContent.includes('4 Boxes') && drawer2.textContent.includes('(48 Bottles)'))
+check('boxes shown in cart', drawer2.textContent.includes('4 Boxes'))
 
 // --- Go to checkout: name + address only, then WhatsApp opens directly ---
 const orderBtn = $$('button').find((b) => b.textContent.includes('Order on WhatsApp'))
@@ -222,7 +222,7 @@ const root2 = createRoot(document.getElementById('root'))
 root2.render(React.createElement(App))
 await sleep(400)
 badge = document.querySelector('[data-cart-badge]')
-check('cart restored from localStorage', badge && badge.textContent.trim() === '48')
+check('cart restored from localStorage', badge && badge.textContent.trim() === '4')
 
 // --- Max 40 cartons cap on the card Add button ---
 const ml200card2 = document.querySelectorAll('[data-reveal-group-item]')[0]

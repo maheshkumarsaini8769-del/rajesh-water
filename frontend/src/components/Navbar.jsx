@@ -12,7 +12,7 @@ const LINKS = [
 ]
 
 export default function Navbar() {
-  const { totalQuantity, openCart } = useCart()
+  const { totalBoxes, openCart } = useCart()
   const { content } = useSite()
   const brand = content.brand ?? {}
   const name = brand.name ?? 'RAJESH WATER'
@@ -80,17 +80,17 @@ export default function Navbar() {
             type="button"
             onClick={openCart}
             data-cart-target
-            aria-label={`Open cart, ${totalQuantity} items`}
+            aria-label={`Open cart, ${totalBoxes} box${totalBoxes === 1 ? '' : 'es'}`}
             className="glass relative grid h-11 w-11 cursor-pointer place-items-center rounded-full text-ink-900 shadow-sm transition-all duration-300 hover:scale-110 hover:shadow-[0_8px_24px_rgba(31,143,88,0.3)] active:scale-95"
           >
             <FaBagShopping className="text-lg" />
             <span
               data-cart-badge
               className={`absolute -right-1 -top-1 grid min-w-[20px] place-items-center rounded-full bg-brand-500 px-1.5 py-0.5 text-[11px] font-bold text-white shadow transition-transform duration-300 ${
-                totalQuantity === 0 ? 'scale-0' : 'scale-100'
+                totalBoxes === 0 ? 'scale-0' : 'scale-100'
               }`}
             >
-              {totalQuantity}
+              {totalBoxes}
             </span>
           </button>
 

@@ -127,6 +127,14 @@ export function CartProvider({ children }) {
     () => items.reduce((sum, it) => sum + it.quantity, 0),
     [items],
   )
+  const totalBoxes = useMemo(
+    () =>
+      items.reduce(
+        (sum, it) => sum + Math.round(it.quantity / boxSizeOf(getProduct(it.id))),
+        0,
+      ),
+    [items],
+  )
   const totalAmount = useMemo(
     () => items.reduce((sum, it) => sum + it.quantity * it.price, 0),
     [items],
@@ -196,6 +204,7 @@ export function CartProvider({ children }) {
       openCart,
       closeCart,
       totalQuantity,
+      totalBoxes,
       totalAmount,
       meetsMinimum,
       lastAdded,
@@ -214,6 +223,7 @@ export function CartProvider({ children }) {
       openCart,
       closeCart,
       totalQuantity,
+      totalBoxes,
       totalAmount,
       meetsMinimum,
       lastAdded,

@@ -5,7 +5,7 @@ import { useSiteData } from '../context/SiteDataContext'
 
 /** Floating WhatsApp + call buttons (right side) and mobile sticky cart button. */
 export default function FloatingActions() {
-  const { totalQuantity, openCart } = useCart()
+  const { totalBoxes, openCart } = useCart()
   const { settings, waLink, telLink } = useSiteData()
   const number = settings.whatsappNumber || ''
 
@@ -47,14 +47,14 @@ export default function FloatingActions() {
       <button
         type="button"
         onClick={openCart}
-        aria-label={`Open cart, ${totalQuantity} items`}
+        aria-label={`Open cart, ${totalBoxes} box${totalBoxes === 1 ? '' : 'es'}`}
         className="relative grid cursor-pointer place-items-center rounded-2xl bg-ink-950 text-white shadow-[0_10px_24px_rgba(10,36,29,0.35)] transition-transform duration-300 hover:scale-105 active:scale-95 sm:hidden"
         style={{ width: '3.25rem', height: '3.25rem' }}
       >
         <FaBagShopping className="text-lg" />
-        {totalQuantity > 0 && (
+        {totalBoxes > 0 && (
           <span className="absolute -top-1.5 -right-1.5 grid min-w-[20px] place-items-center rounded-full bg-brand-500 px-1.5 py-0.5 text-[11px] font-bold text-white">
-            {totalQuantity}
+            {totalBoxes}
           </span>
         )}
       </button>

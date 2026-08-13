@@ -19,6 +19,7 @@ export default function CartDrawer() {
     decrement,
     removeItem,
     totalQuantity,
+    totalBoxes,
     totalAmount,
     meetsMinimum,
   } = useCart()
@@ -108,7 +109,7 @@ export default function CartDrawer() {
             <FaBagShopping className="text-brand-500" />
             Your Cart
             <span className="rounded-full bg-brand-100 px-2.5 py-0.5 text-xs font-bold text-brand-700">
-              {totalQuantity} bottle{totalQuantity === 1 ? '' : 's'}
+              {totalBoxes} box{totalBoxes === 1 ? '' : 'es'}
             </span>
           </h2>
           <button
@@ -239,7 +240,7 @@ export default function CartDrawer() {
                       {meetsMinimum && <span className="animate-check-pop">✓</span>}
                     </p>
                     <p className="mt-1 text-xs text-ink-900/60">
-                      Your order: {totalQuantity} / {minOrder} bottles
+                      Your order: {totalBoxes} box{totalBoxes === 1 ? '' : 'es'} · Min {minOrder} bottles
                     </p>
                     <div className="mt-2 h-2 overflow-hidden rounded-full bg-brand-100">
                       <div
@@ -259,16 +260,6 @@ export default function CartDrawer() {
                     </span>
                     <span className="text-xs font-bold text-brand-700">
                       {boxSummary.boxes} Box{boxSummary.boxes === 1 ? '' : 'es'}
-                      {boxSummary.extra > 0 && (
-                        <span className="text-ink-900/55">
-                          {' '}
-                          + {boxSummary.extra} Bottle
-                          {boxSummary.extra === 1 ? '' : 's'}
-                        </span>
-                      )}
-                      <span className="ml-1 text-ink-900/45">
-                        ({totalQuantity} Bottles)
-                      </span>
                     </span>
                   </div>
 

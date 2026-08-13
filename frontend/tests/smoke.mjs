@@ -259,6 +259,22 @@ check('cart + button disabled at 40 boxes', drawerPlus200 && drawerPlus200.disab
 const cartImg = ml200row.querySelector('img')
 check('cart shows full bottle image', cartImg && cartImg.className.includes('object-contain'))
 
+// --- 200 ML cart min clamps at 4 boxes on minus ---
+const drawerMinus200 = [...ml200row.querySelectorAll('button')].find(
+  (b) => (b.getAttribute('aria-label') || '').includes('Decrease'),
+)
+for (let i = 0; i < 50; i += 1) {
+  const rowEl = [...document.querySelector('[role="dialog"]').querySelectorAll('li')].find((li) => li.textContent.includes('200 ML'))
+  const minus = [...rowEl.querySelectorAll('button')].find(
+    (b) => (b.getAttribute('aria-label') || '').includes('Decrease'),
+  )
+  click(minus)
+  await sleep(5)
+}
+await sleep(100)
+const ml200rowMin = [...document.querySelector('[role="dialog"]').querySelectorAll('li')].find((li) => li.textContent.includes('200 ML'))
+check('200ml cart clamps at 4 boxes', ml200rowMin.querySelector('.tabular-nums')?.textContent.trim() === '4')
+
 const failed = results.filter((r) => !r.ok).length
 console.log(`\n${results.length - failed}/${results.length} checks passed`)
 process.exit(failed ? 1 : 0)

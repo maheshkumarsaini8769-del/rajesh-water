@@ -104,11 +104,13 @@ export function CartProvider({ children }) {
   }, [])
 
   const decrement = useCallback((productId, amount) => {
-    const step = amount ?? boxSizeOf(getProduct(productId))
+    const product = getProduct(productId)
+    const step = amount ?? boxSizeOf(product)
+    const minQty = boxSizeOf(product) * Math.max(product?.minBoxes ?? 1, 1)
     setItems((prev) =>
       prev.map((it) =>
         it.id === productId
-          ? { ...it, quantity: Math.max(step, it.quantity - step) }
+          ? { ...it, quantity: Math.max(minQty, it.quantity - step) }
           : it,
       ),
     )

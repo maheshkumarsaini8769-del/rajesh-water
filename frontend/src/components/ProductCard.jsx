@@ -22,6 +22,7 @@ export default function ProductCard({ product, index = 0, reveal = true }) {
   const addTimer = useRef(null)
 
   const packWord = boxSize > 12 ? 'box' : 'carton'
+  const packPlural = (n) => `${packWord}${n > 1 ? (packWord === 'box' ? 'es' : 's') : ''}`
   const inCart = items.find((it) => it.id === product.id)?.quantity ?? 0
   const inCartBoxes = Math.floor(inCart / boxSize)
   const atMax = inCartBoxes >= MAX_CARTONS
@@ -78,7 +79,7 @@ export default function ProductCard({ product, index = 0, reveal = true }) {
           {product.label}
         </h3>
         <p className="line-clamp-1 text-[11px] text-[#3e4850] sm:text-xs">
-          Min {minQty} bottles per order
+          Min {minBoxes} {packPlural(minBoxes)} per order
         </p>
         <div className="pt-1">
           <span className="text-base font-black sm:text-xl" style={{ color: DARK }}>
@@ -91,7 +92,7 @@ export default function ProductCard({ product, index = 0, reveal = true }) {
           </span>
         </div>
         <p className="text-[10px] text-[#6e7881]">
-          ({formatINR(product.price)}/bottle • Min {minQty} bottles)
+          ({formatINR(product.price)}/bottle • Min {minBoxes} {packPlural(minBoxes)})
         </p>
       </div>
 

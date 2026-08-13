@@ -98,7 +98,7 @@ const ml200Card = document.querySelectorAll('[data-reveal-group-item]')[0]
 check('200ml card starts at 4 boxes (312 bottles)', ml200Card.querySelector('.tabular-nums')?.textContent.trim() === '4')
 check('200ml note 1 box = 78 bottles', ml200Card.textContent.includes('1 box = 78 bottles'))
 check('200ml box price line', ml200Card.textContent.includes('₹78 / box (78 bottles)'))
-check('200ml min order line', ml200Card.textContent.includes('Min 312 bottles per order'))
+check('200ml min order line', ml200Card.textContent.includes('Min 4 boxes per order'))
 const ml200Plus = [...ml200Card.querySelectorAll('button')].find(
   (b) => (b.getAttribute('aria-label') || '').includes('Increase'),
 )

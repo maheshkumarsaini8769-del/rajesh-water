@@ -75,7 +75,7 @@ export default function Hero() {
     <section
       id="home"
       ref={sectionRef}
-      className="relative flex min-h-svh items-center overflow-hidden pt-28 pb-16 lg:pt-20"
+      className="relative flex min-h-[100vh] items-center overflow-hidden pt-28 pb-16 lg:pt-20"
     >
       <div className="mx-auto grid w-full max-w-7xl items-center gap-10 px-4 sm:px-6 lg:grid-cols-2 lg:gap-6 lg:px-8">
         {/* Left — text */}

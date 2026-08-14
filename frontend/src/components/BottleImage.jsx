@@ -1,6 +1,10 @@
 import { useCallback, useState } from 'react'
 
 import fallbackUrl from '../assets/fallback-bottle.svg'
+import { API_BASE } from '../utils/api'
+
+const resolveSrc = (src) =>
+  src && String(src).startsWith('/uploads/') && API_BASE ? `${API_BASE}${src}` : src
 
 /**
  * Image that tries a list of remote candidates one-by-one and finally falls
@@ -13,7 +17,7 @@ export default function BottleImage({ srcs = [], alt = '', eager = false, ...res
     setIndex((i) => i + 1)
   }, [])
 
-  const current = index < srcs.length ? srcs[index] : fallbackUrl
+  const current = index < srcs.length ? resolveSrc(srcs[index]) : fallbackUrl
 
   return (
     <img

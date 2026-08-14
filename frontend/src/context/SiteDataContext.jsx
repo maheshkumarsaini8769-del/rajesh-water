@@ -8,6 +8,7 @@ import {
 
 import { BUSINESS } from '../data/business'
 import { products as localProducts } from '../data/products'
+import { API_BASE } from '../utils/api'
 
 const SiteDataContext = createContext(null)
 
@@ -34,7 +35,7 @@ export function SiteDataProvider({ children }) {
       setError(new Error('fetch unavailable'))
       return undefined
     }
-    fetch('/api/site')
+    fetch(`${API_BASE}/api/site`)
       .then((res) => {
         if (!res.ok) throw new Error(`Backend error (${res.status})`)
         return res.json()

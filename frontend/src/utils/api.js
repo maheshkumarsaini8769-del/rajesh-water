@@ -1,4 +1,6 @@
-const BASE = '/api'
+const APP_BASE = String(import.meta.env?.VITE_API_BASE ?? '').replace(/\/+$/, '')
+export const API_BASE = APP_BASE
+const BASE = `${APP_BASE}/api`
 const TOKEN_KEY = 'rajesh-water-admin-token'
 
 export function getToken() {

@@ -9,6 +9,7 @@ import { useSite } from '../context/SiteContext'
 import { useSiteData } from '../context/SiteDataContext'
 import { buildOrderMessage, openWhatsApp } from '../utils/whatsapp'
 import { beginTruecaller, isAndroid, pollTruecaller } from '../utils/truecaller'
+import { API_BASE } from '../utils/api'
 
 const initial = { name: '', mobile: '', address: '' }
 
@@ -58,13 +59,13 @@ export default function Checkout({ onBack, onClose }) {
     if (tcBusy) return
     setTcBusy(true)
     try {
-      const { available, requestId } = await beginTruecaller('/api')
+      const { available, requestId } = await beginTruecaller(`${API_BASE}/api`)
       if (!available) {
         setTcBusy(false)
         return
       }
       pollTruecaller({
-        base: '/api',
+        base: `${API_BASE}/api`,
         requestId,
         onResult: (result) => {
           setTcBusy(false)
@@ -128,7 +129,7 @@ export default function Checkout({ onBack, onClose }) {
     }
 
     if (typeof fetch === 'function') {
-      fetch('/api/orders', {
+      fetch(`${API_BASE}/api/orders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

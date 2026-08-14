@@ -13,7 +13,7 @@ import {
   FaXmark,
 } from 'react-icons/fa6'
 
-import { api, getToken, setToken } from '../utils/api'
+import { api, getToken, setToken, API_BASE } from '../utils/api'
 import { androidNote, beginTruecaller, isAndroid, pollTruecaller } from '../utils/truecaller'
 import AdminBackground from './admin/Background'
 import Customers from './admin/Customers'
@@ -76,7 +76,7 @@ function LoginGate({ onUnlock }) {
     setBusy(true)
     setError('')
     try {
-      const { available, requestId, config } = await beginTruecaller('/api')
+      const { available, requestId, config } = await beginTruecaller(`${API_BASE}/api`)
       if (!available) {
         setError(
           config && config.enabled === false
@@ -87,7 +87,7 @@ function LoginGate({ onUnlock }) {
         return
       }
       pollTruecaller({
-        base: '/api',
+        base: `${API_BASE}/api`,
         requestId,
         onResult: async (result) => {
           setBusy(false)

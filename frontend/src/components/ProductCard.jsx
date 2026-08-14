@@ -27,9 +27,12 @@ export default function ProductCard({ product, index = 0, reveal = true }) {
   const inCartBoxes = Math.floor(inCart / boxSize)
   const atMax = inCartBoxes >= MAX_CARTONS
 
-  const srcs = product.image
-    ? [product.image, ...getBottleImages('bottle200', index)]
-    : getBottleImages('bottle200', index)
+  const srcs =
+    product.images?.length
+      ? product.images
+      : product.image
+        ? [product.image]
+        : getBottleImages('bottle200', index)
 
   const handleAdd = (e) => {
     e?.preventDefault?.()
